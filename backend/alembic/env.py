@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import settings
 from app.db.base import Base
+from app.db.models import User, Role, UserRole
 
 config = context.config
 
