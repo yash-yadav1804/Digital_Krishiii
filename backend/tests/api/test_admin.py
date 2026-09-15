@@ -119,3 +119,170 @@ async def test_admin_cannot_remove_role_from_nonexistent_user(
 
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
+
+
+@pytest.mark.anyio
+async def test_admin_can_deactivate_user(
+    client: AsyncClient,
+    db_session,
+):
+    admin = await create_admin(
+        client=client,
+        db_session=db_session,
+    )
+
+    target = await create_user(
+        client=client,
+        db_session=db_session,
+        email=f"target-status-{uuid.uuid4()}@example.com",
+    )
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": admin["email"],
+            "password": admin["password"],
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = await client.patch(
+        f"/api/v1/admin/users/{target['id']}/status",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "is_active": False,
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["message"] == "user status updated"
+    assert data["user_id"] == str(target["id"])
+    assert data["is_active"] is False
+
+
+@pytest.mark.anyio
+async def test_admin_can_activate_user(
+    client: AsyncClient,
+    db_session,
+):
+    admin = await create_admin(
+        client=client,
+        db_session=db_session,
+    )
+
+    target = await create_user(
+        client=client,
+        db_session=db_session,
+        email=f"target-activate-{uuid.uuid4()}@example.com",
+    )
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": admin["email"],
+            "password": admin["password"],
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    deactivate_response = await client.patch(
+        f"/api/v1/admin/users/{target['id']}/status",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "is_active": False,
+        },
+    )
+
+    assert deactivate_response.status_code == 200
+
+    activate_response = await client.patch(
+        f"/api/v1/admin/users/{target['id']}/status",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "is_active": True,
+        },
+    )
+
+    assert activate_response.status_code == 200
+    assert activate_response.json()["is_active"] is True
+
+
+@pytest.mark.anyio
+async def test_admin_cannot_update_own_status(
+    client: AsyncClient,
+    db_session,
+):
+    admin = await create_admin(
+        client=client,
+        db_session=db_session,
+    )
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": admin["email"],
+            "password": admin["password"],
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = await client.patch(
+        f"/api/v1/admin/users/{admin['id']}/status",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "is_active": False,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == ("An admin cannot deactivate their own account")
+
+
+@pytest.mark.anyio
+async def test_admin_cannot_update_nonexistent_user_status(
+    client: AsyncClient,
+    db_session,
+):
+    admin = await create_admin(
+        client=client,
+        db_session=db_session,
+    )
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": admin["email"],
+            "password": admin["password"],
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    missing_user_id = uuid.uuid4()
+
+    response = await client.patch(
+        f"/api/v1/admin/users/{missing_user_id}/status",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "is_active": False,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not found"
