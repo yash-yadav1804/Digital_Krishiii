@@ -9,6 +9,16 @@ router = APIRouter(
 )
 
 
+@router.get(
+    "/me",
+    response_model=UserResponse,
+)
+async def get_my_profile(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    return current_user
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_my_profile(
     current_user: User = Depends(get_current_user),  # noqa: B008

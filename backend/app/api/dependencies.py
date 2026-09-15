@@ -1,40 +1,109 @@
 from collections.abc import Callable
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.security.jwt import decode_access_token
-from app.db.models import User
-from app.db.session import get_db_session
+from app.db.models.user import User
+from app.db.session import get_db
 from app.repositories.user_repository import UserRepository
+
 from app.services.user_service import UserService
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v1/auth/login",
-)
+security = HTTPBearer()
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),  # noqa: B008
-    session: AsyncSession = Depends(get_db_session),  # noqa: B008
+    credentials: Annotated[
+        HTTPAuthorizationCredentials,
+        Depends(security),
+    ],
+    session: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    token = credentials.credentials
+
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    try:
+        user_uuid = UUID(str(user_id))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID in token",
+        )
+
+    user_repository = UserRepository(session)
+    user = await user_repository.get_by_id(user_uuid)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
+
+    return user
+
+
+async def get_user_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> UserService:
+    return UserService(session)
+
+
+async def get_current_user(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials,
+        Depends(security),
+    ],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    token = credentials.credentials
 
     try:
         user_id = decode_access_token(token)
-    except ValueError as exc:
-        raise credentials_exception from exc
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
-    user = await UserRepository(session).get_by_id(user_id)
+    user_repository = UserRepository(session)
 
-    if user is None or not user.is_active:
-        raise credentials_exception
+    user = await user_repository.get_by_id(user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
 
     return user
 
@@ -45,12 +114,12 @@ def require_role(role_name: str) -> Callable:
             User,
             Depends(get_current_user),
         ],
-        session: Annotated[
-            AsyncSession,
-            Depends(get_db_session),
+        user_service: Annotated[
+            UserService,
+            Depends(get_user_service),
         ],
     ) -> User:
-        has_role = await UserService(session).user_has_role(
+        has_role = await user_service.user_has_role(
             user_id=current_user.id,
             role_name=role_name,
         )
@@ -58,7 +127,7 @@ def require_role(role_name: str) -> Callable:
         if not has_role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to access this resource",
+                detail="Insufficient permissions",
             )
 
         return current_user
