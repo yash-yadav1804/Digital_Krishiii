@@ -1,115 +1,121 @@
-from uuid import UUID
+import uuid
 
-from fastapi import APIRouter, Depends, status
+import pytest
+from httpx import AsyncClient
 
-from app.api.dependencies import get_user_service, require_role
-from app.db.models.user import User
-from app.schemas.admin import AdminUserResponse, UpdateUserStatusRequest
 from app.services.user_service import UserService
 
-router = APIRouter(
-    prefix="/admin",
-    tags=["Admin"],
-)
 
-
-@router.get(
-    "/ping",
-)
-async def admin_ping(
-    current_user: User = Depends(require_role("admin")),
+async def create_user(
+    client: AsyncClient,
+    db_session,
+    email: str,
+    password: str = "StrongPassword123!",
 ):
-    return {
-        "message": "Welcome to the admin area",
-        "user_id": str(current_user.id),
-    }
+    service = UserService(db_session)
 
-
-@router.get(
-    "/users",
-    response_model=list[AdminUserResponse],
-    dependencies=[Depends(require_role("admin"))],
-)
-async def list_users(
-    user_service: UserService = Depends(get_user_service),
-):
-    users = await user_service.get_all_users()
-
-    return [
-        AdminUserResponse(
-            id=user.id,
-            email=user.email,
-            is_active=user.is_active,
-            roles=[role.name for role in user.roles],
-        )
-        for user in users
-    ]
-
-
-@router.patch(
-    "/users/{user_id}/status",
-    dependencies=[Depends(require_role("admin"))],
-)
-async def update_user_status(
-    user_id: UUID,
-    request: UpdateUserStatusRequest,
-    current_user: User = Depends(require_role("admin")),
-    user_service: UserService = Depends(get_user_service),
-):
-    await user_service.update_user_status(
-        current_user_id=current_user.id,
-        target_user_id=user_id,
-        is_active=request.is_active,
+    user = await service.register_user(
+        email=email,
+        password=password,
     )
 
-    return {
-        "message": "user status updated",
-        "user_id": str(user_id),
-        "is_active": request.is_active,
-    }
-
-
-@router.post(
-    "/users/{user_id}/roles/{role_name}",
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_role("admin"))],
-)
-async def assign_role(
-    user_id: UUID,
-    role_name: str,
-    user_service: UserService = Depends(get_user_service),
-):
-    await user_service.assign_role_to_user(
-        user_id=user_id,
-        role_name=role_name,
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": password,
+        },
     )
 
+    assert login_response.status_code == 200
+
     return {
-        "message": "Role assigned successfully",
-        "user_id": str(user_id),
-        "role": role_name,
+        "id": user.id,
+        "token": login_response.json()["access_token"],
+        "email": email,
+        "password": password,
     }
 
 
-@router.delete(
-    "/users/{user_id}/roles/{role_name}",
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_role("admin"))],
-)
-async def remove_role(
-    user_id: UUID,
-    role_name: str,
-    current_user: User = Depends(require_role("admin")),
-    user_service: UserService = Depends(get_user_service),
+async def create_admin(
+    client: AsyncClient,
+    db_session,
 ):
-    await user_service.remove_role_from_user(
-        current_user_id=current_user.id,
-        target_user_id=user_id,
-        role_name=role_name,
+    admin = await create_user(
+        client=client,
+        db_session=db_session,
+        email=f"admin-{uuid.uuid4()}@example.com",
     )
 
-    return {
-        "message": "Role removed successfully",
-        "user_id": str(user_id),
-        "role": role_name,
-    }
+    service = UserService(db_session)
+
+    await service.assign_role_to_user(
+        user_id=admin["id"],
+        role_name="admin",
+    )
+
+    return admin
+
+
+@pytest.mark.anyio
+async def test_admin_cannot_assign_role_to_nonexistent_user(
+    client: AsyncClient,
+    db_session,
+):
+    admin = await create_admin(
+        client=client,
+        db_session=db_session,
+    )
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": admin["email"],
+            "password": admin["password"],
+        },
+    )
+
+    token = login_response.json()["access_token"]
+    missing_user_id = uuid.uuid4()
+
+    response = await client.post(
+        f"/api/v1/admin/users/{missing_user_id}/roles/contractor",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not found"
+
+
+@pytest.mark.anyio
+async def test_admin_cannot_remove_role_from_nonexistent_user(
+    client: AsyncClient,
+    db_session,
+):
+    admin = await create_admin(
+        client=client,
+        db_session=db_session,
+    )
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": admin["email"],
+            "password": admin["password"],
+        },
+    )
+
+    token = login_response.json()["access_token"]
+    missing_user_id = uuid.uuid4()
+
+    response = await client.delete(
+        f"/api/v1/admin/users/{missing_user_id}/roles/contractor",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not found"

@@ -165,6 +165,14 @@ class UserService:
                 detail="An admin cannot remove their own admin role",
             )
 
+        target_user = await self.user_repository.get_by_id(target_user_id)
+
+        if target_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
         role_result = await self.session.execute(
             select(Role).where(Role.name == role_name)
         )
