@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+
 from app.api.dependencies import get_current_user, require_role
 from app.db.models import User
 from app.schemas.auth import UserResponse
@@ -13,13 +14,6 @@ router = APIRouter(
     "/me",
     response_model=UserResponse,
 )
-async def get_my_profile(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    return current_user
-
-
-@router.get("/me", response_model=UserResponse)
 async def get_my_profile(
     current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> UserResponse:
