@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ class LandRepository:
 
     async def get_by_id(
         self,
-        land_id: uuid.UUID,
+        land_id: UUID,
     ) -> Land | None:
         result = await self.session.execute(select(Land).where(Land.id == land_id))
 
@@ -27,7 +27,7 @@ class LandRepository:
 
     async def get_by_farmer_id(
         self,
-        farmer_id: uuid.UUID,
+        farmer_id: UUID,
     ) -> list[Land]:
         result = await self.session.execute(
             select(Land)
@@ -46,3 +46,12 @@ class LandRepository:
     async def delete(self, land: Land) -> None:
         await self.session.delete(land)
         await self.session.commit()
+
+
+async def get_land_by_id(
+    db: AsyncSession,
+    land_id: UUID,
+) -> Land | None:
+    result = await db.execute(select(Land).where(Land.id == land_id))
+
+    return result.scalar_one_or_none()
