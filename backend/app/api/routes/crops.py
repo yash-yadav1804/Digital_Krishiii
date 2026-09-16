@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
@@ -43,12 +43,35 @@ async def create_crop_route(
     response_model=list[CropResponse],
 )
 async def list_crops_route(
+    season: str | None = Query(
+        default=None,
+        description="Filter crops by season",
+    ),
+    crop_name: str | None = Query(
+        default=None,
+        description="Search crops by name",
+    ),
+    skip: int = Query(
+        default=0,
+        ge=0,
+        description="Number of records to skip",
+    ),
+    limit: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+        description="Maximum number of records to return",
+    ),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_farmer_crops(
         db=db,
         farmer_id=current_user.id,
+        season=season,
+        crop_name=crop_name,
+        skip=skip,
+        limit=limit,
     )
 
 

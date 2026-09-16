@@ -29,10 +29,24 @@ async def get_crop_by_id(
 async def get_crops_by_farmer(
     db: AsyncSession,
     farmer_id: UUID,
+    season: str | None = None,
+    crop_name: str | None = None,
+    skip: int = 0,
+    limit: int = 10,
 ) -> list[Crop]:
-    result = await db.execute(
+    query = (
         select(Crop).where(Crop.farmer_id == farmer_id).order_by(Crop.created_at.desc())
     )
+
+    if season:
+        query = query.where(Crop.season == season)
+
+    if crop_name:
+        query = query.where(Crop.crop_name.ilike(f"%{crop_name}%"))
+
+    query = query.offset(skip).limit(limit)
+
+    result = await db.execute(query)
 
     return list(result.scalars().all())
 

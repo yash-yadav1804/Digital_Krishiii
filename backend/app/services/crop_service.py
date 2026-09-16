@@ -60,10 +60,18 @@ async def get_crop(
 async def get_farmer_crops(
     db: AsyncSession,
     farmer_id: UUID,
+    season: str | None = None,
+    crop_name: str | None = None,
+    skip: int = 0,
+    limit: int = 10,
 ) -> list[Crop]:
     return await crop_repository.get_crops_by_farmer(
-        db,
-        farmer_id,
+        db=db,
+        farmer_id=farmer_id,
+        season=season,
+        crop_name=crop_name,
+        skip=skip,
+        limit=limit,
     )
 
 
