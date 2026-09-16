@@ -175,3 +175,68 @@ async def test_delete_crop(
     )
 
     assert get_response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_farmer_cannot_create_crop_for_another_farmer_land(
+    client,
+    auth_headers,
+):
+    first_farmer_land_response = await client.post(
+        "/lands/",
+        json={
+            "land_name": "First Farmer Land",
+            "village": "Sehore",
+            "district": "Sehore",
+            "state": "Madhya Pradesh",
+            "area_acres": 4.0,
+        },
+        headers=auth_headers,
+    )
+
+    assert first_farmer_land_response.status_code in (200, 201)
+
+    land_id = first_farmer_land_response.json()["id"]
+
+    second_farmer_email = f"second-farmer-{uuid4()}@example.com"
+    second_farmer_password = "TestPassword123!"
+
+    register_response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": second_farmer_email,
+            "password": second_farmer_password,
+        },
+    )
+
+    assert register_response.status_code in (200, 201)
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": second_farmer_email,
+            "password": second_farmer_password,
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    second_farmer_token = login_response.json()["access_token"]
+
+    second_farmer_headers = {
+        "Authorization": f"Bearer {second_farmer_token}",
+    }
+
+    crop_response = await client.post(
+        "/api/v1/crops",
+        json={
+            "land_id": land_id,
+            "crop_name": "Unauthorized Wheat",
+            "season": "Rabi",
+            "expected_yield": 10,
+        },
+        headers=second_farmer_headers,
+    )
+
+    assert crop_response.status_code == 404
+    assert crop_response.json()["detail"] == "Land not found"
