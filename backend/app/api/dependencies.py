@@ -1,43 +1,32 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.security.jwt import decode_access_token
 from app.db.models.user import User
 from app.db.session import get_db
 from app.repositories.user_repository import UserRepository
-
 from app.services.user_service import UserService
 
 security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials,
-        Depends(security),
-    ],
-    session: Annotated[AsyncSession, Depends(get_db)],
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: AsyncSession = Depends(get_db),
 ) -> User:
     token = credentials.credentials
 
-    payload = decode_access_token(token)
-
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
-    user_id = payload.get("sub")
+    user_id = decode_access_token(token)
 
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
+            detail="Invalid or expired token",
         )
 
     try:
@@ -49,6 +38,7 @@ async def get_current_user(
         )
 
     user_repository = UserRepository(session)
+
     user = await user_repository.get_by_id(user_uuid)
 
     if user is None:
@@ -67,45 +57,12 @@ async def get_current_user(
 
 
 async def get_user_service(
-    session: Annotated[AsyncSession, Depends(get_db)],
+    session: Annotated[
+        AsyncSession,
+        Depends(get_db),
+    ],
 ) -> UserService:
     return UserService(session)
-
-
-async def get_current_user(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials,
-        Depends(security),
-    ],
-    session: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
-    token = credentials.credentials
-
-    try:
-        user_id = decode_access_token(token)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
-    user_repository = UserRepository(session)
-
-    user = await user_repository.get_by_id(user_id)
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive",
-        )
-
-    return user
 
 
 def require_role(role_name: str) -> Callable:

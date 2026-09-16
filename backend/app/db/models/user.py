@@ -6,9 +6,12 @@ from sqlalchemy import Boolean, DateTime, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.models.crop import Crop
 
 if TYPE_CHECKING:
+    from app.db.models.farmer_profile import FarmerProfile
     from app.db.models.role import Role
+    from app.db.models.land import Land
 
 
 class User(Base):
@@ -54,4 +57,20 @@ class User(Base):
     roles: Mapped[list["Role"]] = relationship(
         secondary="user_roles",
         back_populates="users",
+    )
+
+    farmer_profile: Mapped["FarmerProfile | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    lands: Mapped[list["Land"]] = relationship(
+        back_populates="farmer",
+        cascade="all, delete-orphan",
+    )
+
+    crops: Mapped[list["Crop"]] = relationship(
+        back_populates="farmer",
+        cascade="all, delete-orphan",
     )

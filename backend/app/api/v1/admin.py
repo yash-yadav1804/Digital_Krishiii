@@ -2,14 +2,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.dependencies import require_role
+from app.api.dependencies import get_user_service, require_role
 from app.db.models.user import User
-from app.schemas.admin import (
-    AdminUserResponse,
-    UpdateUserStatusRequest,
-)
+from app.schemas.admin import AdminUserResponse, UpdateUserStatusRequest
 from app.services.user_service import UserService
-from app.api.dependencies import get_user_service
 
 router = APIRouter(
     prefix="/admin",
@@ -17,42 +13,39 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/ping",
-    dependencies=[Depends(require_role("admin"))],
-)
-async def admin_ping():
-    return {"message": "admin access granted"}
+@router.get("/ping")
+async def admin_ping(
+    current_user: User = Depends(require_role("admin")),
+):
+    return {
+        "message": "Welcome to the admin area",
+        "user_id": str(current_user.id),
+    }
 
 
 @router.get(
     "/users",
     response_model=list[AdminUserResponse],
-    dependencies=[Depends(require_role("admin"))],
 )
 async def list_users(
+    current_user: User = Depends(require_role("admin")),
     user_service: UserService = Depends(get_user_service),
 ):
     users = await user_service.get_all_users()
 
-    response = []
-
-    for user in users:
-        response.append(
-            AdminUserResponse(
-                id=user.id,
-                email=user.email,
-                is_active=user.is_active,
-                roles=[role.name for role in user.roles],
-            )
+    return [
+        AdminUserResponse(
+            id=user.id,
+            email=user.email,
+            is_active=user.is_active,
+            roles=[role.name for role in user.roles],
         )
-
-    return response
+        for user in users
+    ]
 
 
 @router.patch(
     "/users/{user_id}/status",
-    dependencies=[Depends(require_role("admin"))],
 )
 async def update_user_status(
     user_id: UUID,
@@ -68,17 +61,19 @@ async def update_user_status(
 
     return {
         "message": "user status updated",
+        "user_id": str(user_id),
+        "is_active": request.is_active,
     }
 
 
 @router.post(
     "/users/{user_id}/roles/{role_name}",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_role("admin"))],
 )
 async def assign_role(
     user_id: UUID,
     role_name: str,
+    current_user: User = Depends(require_role("admin")),
     user_service: UserService = Depends(get_user_service),
 ):
     await user_service.assign_role_to_user(
@@ -88,6 +83,8 @@ async def assign_role(
 
     return {
         "message": "Role assigned successfully",
+        "user_id": str(user_id),
+        "role": role_name,
     }
 
 
@@ -109,4 +106,6 @@ async def remove_role(
 
     return {
         "message": "Role removed successfully",
+        "user_id": str(user_id),
+        "role": role_name,
     }
