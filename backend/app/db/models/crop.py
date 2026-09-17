@@ -1,11 +1,16 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.land import Land
+    from app.db.models.user import User
 
 
 class Crop(Base):
@@ -63,6 +68,12 @@ class Crop(Base):
         nullable=False,
     )
 
-    farmer = relationship("User", back_populates="crops")
+    farmer: Mapped["User"] = relationship(
+        "User",
+        back_populates="crops",
+    )
 
-    land = relationship("Land", back_populates="crops")
+    land: Mapped["Land"] = relationship(
+        "Land",
+        back_populates="crops",
+    )

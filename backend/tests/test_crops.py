@@ -63,6 +63,9 @@ async def test_list_crops(
         headers=auth_headers,
     )
 
+    print("STATUS:", response.status_code)
+    print("BODY:", response.json())
+
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 

@@ -31,7 +31,7 @@ router = APIRouter(
 )
 async def create_bid_route(
     data: ContractBidCreate,
-    current_user: User = Depends(require_role("BUYER")),
+    current_user: User = Depends(require_role("buyer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await create_bid(
@@ -46,7 +46,7 @@ async def create_bid_route(
     response_model=list[ContractBidResponse],
 )
 async def list_my_bids_route(
-    current_user: User = Depends(require_role("BUYER")),
+    current_user: User = Depends(require_role("buyer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_buyer_bids(
@@ -61,7 +61,7 @@ async def list_my_bids_route(
 )
 async def list_contract_bids_route(
     contract_id: UUID,
-    current_user: User = Depends(require_role("FARMER")),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_contract_bids(
@@ -78,7 +78,7 @@ async def list_contract_bids_route(
 async def update_bid_route(
     bid_id: UUID,
     data: ContractBidUpdate,
-    current_user: User = Depends(require_role("FARMER")),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await update_bid(

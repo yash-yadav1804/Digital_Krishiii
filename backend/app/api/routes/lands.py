@@ -3,7 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_role
+
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.land import LandCreate, LandResponse, LandUpdate
@@ -28,7 +29,7 @@ def get_land_service(
 )
 async def create_land(
     data: LandCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     land_service: LandService = Depends(get_land_service),
 ):
     return await land_service.create_land(

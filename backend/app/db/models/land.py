@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.db.models.crop import Crop
 
 if TYPE_CHECKING:
     from app.db.models.crop import Crop
@@ -46,7 +46,7 @@ class Land(Base):
         nullable=True,
     )
 
-    area_acres: Mapped[float] = mapped_column(
+    area_acres: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         nullable=False,
     )

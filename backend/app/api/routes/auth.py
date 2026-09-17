@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import verify_password
+from app.core.security.jwt import create_access_token
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.auth import LoginRequest, TokenResponse
@@ -46,7 +47,8 @@ async def login(
             detail="User account is inactive",
         )
 
-    # Temporary response until JWT generation is implemented.
+    access_token = create_access_token(str(user.id))
+
     return TokenResponse(
-        access_token="temporary-token",
+        access_token=access_token,
     )

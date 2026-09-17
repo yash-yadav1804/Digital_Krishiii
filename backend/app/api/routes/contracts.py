@@ -33,7 +33,7 @@ router = APIRouter(
 )
 async def create_contract_route(
     data: ContractCreate,
-    current_user: User = Depends(require_role("FARMER")),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await create_contract(
@@ -48,7 +48,7 @@ async def create_contract_route(
     response_model=list[ContractResponse],
 )
 async def list_my_contracts_route(
-    current_user: User = Depends(require_role("FARMER")),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_farmer_contracts(
@@ -90,7 +90,7 @@ async def get_contract_route(
 async def update_contract_route(
     contract_id: UUID,
     data: ContractUpdate,
-    current_user: User = Depends(require_role("FARMER")),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await update_contract(
@@ -107,7 +107,7 @@ async def update_contract_route(
 )
 async def delete_contract_route(
     contract_id: UUID,
-    current_user: User = Depends(require_role("FARMER")),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     await delete_contract(

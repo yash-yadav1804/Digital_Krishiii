@@ -65,25 +65,14 @@ async def get_user_service(
     return UserService(session)
 
 
-def require_role(role_name: str) -> Callable:
-    normalized_role_name = role_name.strip().lower()
-
-    async def role_checker(
-        current_user: Annotated[
-            User,
-            Depends(get_current_user),
-        ],
-        user_service: Annotated[
-            UserService,
-            Depends(get_user_service),
-        ],
+def require_role(role_name: str):
+    def role_checker(
+        current_user: User = Depends(get_current_user),
     ) -> User:
-        has_role = await user_service.user_has_role(
-            user_id=current_user.id,
-            role_name=normalized_role_name,
-        )
+        required_role = role_name.strip().lower()
+        user_roles = {role.name.strip().lower() for role in current_user.roles}
 
-        if not has_role:
+        if required_role not in user_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",
