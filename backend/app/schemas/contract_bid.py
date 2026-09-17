@@ -1,7 +1,14 @@
 from decimal import Decimal
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class ContractBidStatus(StrEnum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
 
 
 class ContractBidCreate(BaseModel):
@@ -23,10 +30,7 @@ class ContractBidCreate(BaseModel):
 
 
 class ContractBidUpdate(BaseModel):
-    status: str = Field(
-        min_length=3,
-        max_length=30,
-    )
+    status: ContractBidStatus
 
 
 class ContractBidResponse(BaseModel):
@@ -38,4 +42,4 @@ class ContractBidResponse(BaseModel):
     offered_quantity: Decimal
     offered_price_per_unit: Decimal
     message: str | None
-    status: str
+    status: ContractBidStatus

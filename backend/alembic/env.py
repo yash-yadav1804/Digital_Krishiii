@@ -5,7 +5,6 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import settings
 from app.db.base import Base
-from app.db.models import FarmerProfile, User, Role, UserRole
 
 target_metadata = Base.metadata
 config = context.config

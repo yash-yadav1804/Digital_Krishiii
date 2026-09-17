@@ -32,15 +32,23 @@ class UserService:
         normalized_email = email.strip().lower()
         normalized_role_name = role_name.strip().lower()
 
-        if normalized_role_name not in {"farmer", "buyer"}:
+        allowed_registration_roles = {
+            "farmer",
+            "buyer",
+            "contractor",
+        }
+
+        if normalized_role_name not in allowed_registration_roles:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid role",
+                detail=("Invalid role. Allowed registration roles are: farmer, buyer, contractor"),
             )
+
         existing_user = await self.user_repository.get_by_email(normalized_email)
 
         if existing_user is not None:
             raise UserAlreadyExistsError("Email is already registered")
+
         user = User(
             email=normalized_email,
             password_hash=hash_password(password),
@@ -72,9 +80,7 @@ class UserService:
     ) -> User:
         normalized_email = email.strip().lower()
 
-        result = await self.session.execute(
-            select(User).where(User.email == normalized_email)
-        )
+        result = await self.session.execute(select(User).where(User.email == normalized_email))
 
         user = result.scalar_one_or_none()
 
@@ -127,6 +133,8 @@ class UserService:
         user_id: UUID,
         role_name: str,
     ) -> bool:
+        normalized_role_name = role_name.strip().lower()
+
         user = await self.user_repository.get_by_id(user_id)
 
         if user is None:
@@ -135,7 +143,7 @@ class UserService:
                 detail="User not found",
             )
 
-        role = await self.role_repository.find_by_name(role_name)
+        role = await self.role_repository.find_by_name(normalized_role_name)
 
         if role is None:
             raise HTTPException(
@@ -173,7 +181,9 @@ class UserService:
         target_user_id: UUID,
         role_name: str,
     ) -> bool:
-        if current_user_id == target_user_id and role_name == "admin":
+        normalized_role_name = role_name.strip().lower()
+
+        if current_user_id == target_user_id and normalized_role_name == "admin":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="An admin cannot remove their own admin role",
@@ -188,7 +198,7 @@ class UserService:
             )
 
         role_result = await self.session.execute(
-            select(Role).where(Role.name == role_name)
+            select(Role).where(func.lower(Role.name) == normalized_role_name)
         )
 
         role = role_result.scalar_one_or_none()

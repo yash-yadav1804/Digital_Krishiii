@@ -29,9 +29,7 @@ async def get_contracts_by_farmer(
     farmer_id: UUID,
 ) -> list[Contract]:
     result = await db.execute(
-        select(Contract)
-        .where(Contract.farmer_id == farmer_id)
-        .order_by(Contract.created_at.desc())
+        select(Contract).where(Contract.farmer_id == farmer_id).order_by(Contract.created_at.desc())
     )
     return list(result.scalars().all())
 
@@ -40,9 +38,7 @@ async def get_open_contracts(
     db: AsyncSession,
 ) -> list[Contract]:
     result = await db.execute(
-        select(Contract)
-        .where(Contract.status == "OPEN")
-        .order_by(Contract.created_at.desc())
+        select(Contract).where(Contract.status == "OPEN").order_by(Contract.created_at.desc())
     )
     return list(result.scalars().all())
 

@@ -25,13 +25,11 @@ async def get_bid_by_id(
 
 
 async def get_bids_by_buyer(
-    db: AsyncSession,
-    buyer_id: UUID,
+    self,
+    buyer_id: int,
 ) -> list[ContractBid]:
-    result = await db.execute(
-        select(ContractBid)
-        .where(ContractBid.buyer_id == buyer_id)
-        .order_by(ContractBid.created_at.desc())
+    result = await self.db.execute(
+        select(ContractBid).where(ContractBid.buyer_id == buyer_id).order_by(ContractBid.id.desc())
     )
     return list(result.scalars().all())
 
@@ -40,11 +38,8 @@ async def get_bids_by_contract(
     db: AsyncSession,
     contract_id: UUID,
 ) -> list[ContractBid]:
-    result = await db.execute(
-        select(ContractBid)
-        .where(ContractBid.contract_id == contract_id)
-        .order_by(ContractBid.created_at.desc())
-    )
+    result = await db.execute(select(ContractBid).where(ContractBid.contract_id == contract_id))
+
     return list(result.scalars().all())
 
 

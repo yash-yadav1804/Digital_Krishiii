@@ -30,9 +30,7 @@ class LandRepository:
         farmer_id: UUID,
     ) -> list[Land]:
         result = await self.session.execute(
-            select(Land)
-            .where(Land.farmer_id == farmer_id)
-            .order_by(Land.created_at.desc())
+            select(Land).where(Land.farmer_id == farmer_id).order_by(Land.created_at.desc())
         )
 
         return list(result.scalars().all())

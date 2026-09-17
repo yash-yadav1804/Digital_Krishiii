@@ -46,9 +46,7 @@ async def create_farmer_profile(
             detail="You can only create your own farmer profile",
         )
 
-    result = await db.execute(
-        select(FarmerProfile).where(FarmerProfile.user_id == current_user.id)
-    )
+    result = await db.execute(select(FarmerProfile).where(FarmerProfile.user_id == current_user.id))
 
     existing_profile = result.scalar_one_or_none()
 
@@ -113,9 +111,7 @@ async def get_farmer_profile(
             detail="You can only view your own farmer profile",
         )
 
-    result = await db.execute(
-        select(FarmerProfile).where(FarmerProfile.user_id == user_id)
-    )
+    result = await db.execute(select(FarmerProfile).where(FarmerProfile.user_id == user_id))
 
     profile = result.scalar_one_or_none()
 
@@ -148,9 +144,7 @@ async def update_farmer_profile(
             detail="You can only update your own farmer profile",
         )
 
-    result = await db.execute(
-        select(FarmerProfile).where(FarmerProfile.user_id == user_id)
-    )
+    result = await db.execute(select(FarmerProfile).where(FarmerProfile.user_id == user_id))
 
     profile = result.scalar_one_or_none()
 
@@ -189,9 +183,7 @@ async def delete_farmer_profile(
             detail="You can only delete your own farmer profile",
         )
 
-    result = await db.execute(
-        select(FarmerProfile).where(FarmerProfile.user_id == user_id)
-    )
+    result = await db.execute(select(FarmerProfile).where(FarmerProfile.user_id == user_id))
 
     profile = result.scalar_one_or_none()
 

@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import verify_password
-from app.db.session import get_db
 from app.db.models.user import User
+from app.db.session import get_db
 from app.schemas.auth import LoginRequest, TokenResponse
 
 router = APIRouter(

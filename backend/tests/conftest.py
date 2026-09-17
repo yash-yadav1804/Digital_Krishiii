@@ -6,8 +6,8 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
 from app.db.session import async_session_factory
+from app.main import app
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -81,6 +81,39 @@ async def auth_headers(
     token = token_data.get("access_token")
 
     assert token is not None, token_data
+
+    return {
+        "Authorization": f"Bearer {token}",
+    }
+
+
+@pytest.fixture
+async def second_farmer_headers(client):
+    email = f"second-farmer-{uuid.uuid4()}@example.com"
+    password = "Password123!"
+
+    register_response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": password,
+            "role": "farmer",
+        },
+    )
+
+    assert register_response.status_code in (200, 201)
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    token = login_response.json()["access_token"]
 
     return {
         "Authorization": f"Bearer {token}",

@@ -10,8 +10,8 @@ from app.db.models.crop import Crop
 
 if TYPE_CHECKING:
     from app.db.models.farmer_profile import FarmerProfile
-    from app.db.models.role import Role
     from app.db.models.land import Land
+    from app.db.models.role import Role
 
 
 class User(Base):

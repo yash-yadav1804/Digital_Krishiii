@@ -19,9 +19,7 @@ async def seed_default_roles(session: AsyncSession) -> None:
     existing_role_names = {role.name for role in result.scalars().all()}
 
     missing_roles = [
-        Role(name=role_name)
-        for role_name in DEFAULT_ROLES
-        if role_name not in existing_role_names
+        Role(name=role_name) for role_name in DEFAULT_ROLES if role_name not in existing_role_names
     ]
 
     if missing_roles:

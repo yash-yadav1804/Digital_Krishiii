@@ -50,9 +50,7 @@ class UserRepository:
         user_id: UUID,
         role_name: str,
     ) -> bool:
-        role_result = await self.session.execute(
-            select(Role).where(Role.name == role_name)
-        )
+        role_result = await self.session.execute(select(Role).where(Role.name == role_name))
         role = role_result.scalar_one_or_none()
 
         if role is None:

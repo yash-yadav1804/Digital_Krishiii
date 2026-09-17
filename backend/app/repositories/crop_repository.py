@@ -34,9 +34,7 @@ async def get_crops_by_farmer(
     skip: int = 0,
     limit: int = 10,
 ) -> list[Crop]:
-    query = (
-        select(Crop).where(Crop.farmer_id == farmer_id).order_by(Crop.created_at.desc())
-    )
+    query = select(Crop).where(Crop.farmer_id == farmer_id).order_by(Crop.created_at.desc())
 
     if season:
         query = query.where(Crop.season == season)

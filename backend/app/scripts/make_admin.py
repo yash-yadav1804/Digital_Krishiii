@@ -1,5 +1,6 @@
 import asyncio
 import sys
+
 from sqlalchemy import select
 
 from app.db.models.role import Role
@@ -12,9 +13,7 @@ USER_EMAIL = "farmer1@example.com"
 
 async def make_admin() -> None:
     async with async_session_factory() as session:
-        user_result = await session.execute(
-            select(User).where(User.email == USER_EMAIL)
-        )
+        user_result = await session.execute(select(User).where(User.email == USER_EMAIL))
         user = user_result.scalar_one_or_none()
 
         if user is None:

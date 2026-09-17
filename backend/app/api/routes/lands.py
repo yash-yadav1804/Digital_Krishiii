@@ -1,14 +1,13 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
-from app.db.models.land import Land
 from app.db.models.user import User
+from app.db.session import get_db
 from app.schemas.land import LandCreate, LandResponse, LandUpdate
 from app.services.land_service import LandService
-from app.db.session import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(
     prefix="/lands",

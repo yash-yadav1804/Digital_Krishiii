@@ -1,11 +1,11 @@
 from typing import Annotated
 
+from app.core.database import get_db
+from app.models.user import User
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.models.user import User
 from app.api.dependencies import require_role
 
 router = APIRouter(

@@ -8,6 +8,7 @@ from app.repositories import contract_bid_repository
 from app.repositories.contract_repository import get_contract_by_id
 from app.schemas.contract_bid import (
     ContractBidCreate,
+    ContractBidStatus,
     ContractBidUpdate,
 )
 
@@ -139,17 +140,15 @@ async def update_bid(
             detail="Only pending bids can be updated",
         )
 
-    allowed_statuses = {"ACCEPTED", "REJECTED"}
-
-    if data.status not in allowed_statuses:
+    if data.status == ContractBidStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Status must be ACCEPTED or REJECTED",
         )
 
-    bid.status = data.status
+    bid.status = data.status.value
 
-    if data.status == "ACCEPTED":
+    if data.status == ContractBidStatus.ACCEPTED:
         contract.buyer_id = bid.buyer_id
         contract.status = "ACCEPTED"
 
