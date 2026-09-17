@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_role
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.contract_bid import (
@@ -31,7 +31,7 @@ router = APIRouter(
 )
 async def create_bid_route(
     data: ContractBidCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("BUYER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await create_bid(
@@ -46,7 +46,7 @@ async def create_bid_route(
     response_model=list[ContractBidResponse],
 )
 async def list_my_bids_route(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("BUYER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_buyer_bids(
@@ -61,7 +61,7 @@ async def list_my_bids_route(
 )
 async def list_contract_bids_route(
     contract_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("FARMER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_contract_bids(
@@ -78,7 +78,7 @@ async def list_contract_bids_route(
 async def update_bid_route(
     bid_id: UUID,
     data: ContractBidUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("FARMER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await update_bid(

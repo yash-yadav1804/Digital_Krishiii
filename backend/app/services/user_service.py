@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions.user import UserAlreadyExistsError
@@ -27,14 +27,20 @@ class UserService:
         self,
         email: str,
         password: str,
+        role_name: str = "farmer",
     ) -> User:
         normalized_email = email.strip().lower()
+        normalized_role_name = role_name.strip().lower()
 
+        if normalized_role_name not in {"farmer", "buyer"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid role",
+            )
         existing_user = await self.user_repository.get_by_email(normalized_email)
 
         if existing_user is not None:
             raise UserAlreadyExistsError("Email is already registered")
-
         user = User(
             email=normalized_email,
             password_hash=hash_password(password),
@@ -44,14 +50,14 @@ class UserService:
         self.session.add(user)
         await self.session.flush()
 
-        farmer_role = await self.role_repository.find_by_name("farmer")
+        role = await self.role_repository.find_by_name(normalized_role_name)
 
-        if farmer_role is None:
-            raise RuntimeError("Default farmer role is not configured")
+        if role is None:
+            raise RuntimeError(f"Role '{normalized_role_name}' is not configured")
 
         await self.user_role_repository.assign_role(
             user_id=user.id,
-            role_id=farmer_role.id,
+            role_id=role.id,
         )
 
         await self.session.commit()
@@ -103,10 +109,18 @@ class UserService:
         user_id: UUID,
         role_name: str,
     ) -> bool:
-        return await self.user_role_repository.user_has_role(
-            user_id=user_id,
-            role_name=role_name,
+        normalized_role_name = role_name.strip().lower()
+
+        result = await self.session.execute(
+            select(UserRole)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(
+                UserRole.user_id == user_id,
+                func.lower(Role.name) == normalized_role_name,
+            )
         )
+
+        return result.scalar_one_or_none() is not None
 
     async def assign_role_to_user(
         self,

@@ -25,6 +25,7 @@ async def register_user(
     user = await UserService(session).register_user(
         email=str(payload.email),
         password=payload.password,
+        role_name=payload.role,
     )
 
     return UserResponse.model_validate(user)

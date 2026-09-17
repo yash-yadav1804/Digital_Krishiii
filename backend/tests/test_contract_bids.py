@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 import pytest
 
 
@@ -7,6 +5,7 @@ import pytest
 async def test_buyer_can_create_contract_bid(
     client,
     auth_headers,
+    buyer_headers,
 ):
     land_response = await client.post(
         "/lands/",
@@ -19,6 +18,7 @@ async def test_buyer_can_create_contract_bid(
         },
         headers=auth_headers,
     )
+
     assert land_response.status_code in (200, 201)
     land_id = land_response.json()["id"]
 
@@ -32,6 +32,7 @@ async def test_buyer_can_create_contract_bid(
         },
         headers=auth_headers,
     )
+
     assert crop_response.status_code in (200, 201)
     crop_id = crop_response.json()["id"]
 
@@ -49,34 +50,9 @@ async def test_buyer_can_create_contract_bid(
         },
         headers=auth_headers,
     )
+
     assert contract_response.status_code == 201
     contract_id = contract_response.json()["id"]
-
-    buyer_email = f"buyer-{uuid4()}@example.com"
-    buyer_password = "TestPassword123!"
-
-    register_response = await client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": buyer_email,
-            "password": buyer_password,
-        },
-    )
-    assert register_response.status_code in (200, 201)
-
-    login_response = await client.post(
-        "/api/v1/auth/login",
-        json={
-            "email": buyer_email,
-            "password": buyer_password,
-        },
-    )
-    assert login_response.status_code == 200
-
-    buyer_token = login_response.json()["access_token"]
-    buyer_headers = {
-        "Authorization": f"Bearer {buyer_token}",
-    }
 
     bid_response = await client.post(
         "/contract-bids",

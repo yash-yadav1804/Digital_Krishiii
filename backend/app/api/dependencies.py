@@ -1,4 +1,4 @@
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from typing import Annotated
 from uuid import UUID
 
@@ -31,11 +31,11 @@ async def get_current_user(
 
     try:
         user_uuid = UUID(str(user_id))
-    except ValueError:
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user ID in token",
-        )
+        ) from exc
 
     user_repository = UserRepository(session)
 

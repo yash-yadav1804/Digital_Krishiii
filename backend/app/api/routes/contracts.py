@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_role
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.contract import (
@@ -33,7 +33,7 @@ router = APIRouter(
 )
 async def create_contract_route(
     data: ContractCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("FARMER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await create_contract(
@@ -48,7 +48,7 @@ async def create_contract_route(
     response_model=list[ContractResponse],
 )
 async def list_my_contracts_route(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("FARMER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_farmer_contracts(
@@ -62,6 +62,7 @@ async def list_my_contracts_route(
     response_model=list[ContractResponse],
 )
 async def list_open_contracts_route(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_open_contracts(db=db)
@@ -73,6 +74,7 @@ async def list_open_contracts_route(
 )
 async def get_contract_route(
     contract_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_contract(
@@ -88,7 +90,7 @@ async def get_contract_route(
 async def update_contract_route(
     contract_id: UUID,
     data: ContractUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("FARMER")),
     db: AsyncSession = Depends(get_db),
 ):
     return await update_contract(
@@ -105,7 +107,7 @@ async def update_contract_route(
 )
 async def delete_contract_route(
     contract_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("FARMER")),
     db: AsyncSession = Depends(get_db),
 ):
     await delete_contract(
