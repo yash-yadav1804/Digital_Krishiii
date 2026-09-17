@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from app.api.routes.farmer_profiles import router as farmer_profiles_router
 from app.api.routes.lands import router as lands_router
 from app.api.routes.crops import router as crops_router
+from app.api.routes.contract_bids import router as contract_bids_router
+from app.api.routes.contracts import router as contracts_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.users import router as users_router
@@ -72,6 +74,8 @@ app.include_router(
 )
 
 app.include_router(crops_router)
+app.include_router(contract_bids_router)
+app.include_router(contracts_router)
 
 
 @app.get("/health")
