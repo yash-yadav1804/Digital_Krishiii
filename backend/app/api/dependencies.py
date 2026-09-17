@@ -66,6 +66,8 @@ async def get_user_service(
 
 
 def require_role(role_name: str) -> Callable:
+    normalized_role_name = role_name.strip().lower()
+
     async def role_checker(
         current_user: Annotated[
             User,
@@ -78,7 +80,7 @@ def require_role(role_name: str) -> Callable:
     ) -> User:
         has_role = await user_service.user_has_role(
             user_id=current_user.id,
-            role_name=role_name,
+            role_name=normalized_role_name,
         )
 
         if not has_role:
