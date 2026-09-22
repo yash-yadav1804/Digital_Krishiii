@@ -43,6 +43,16 @@ async def get_open_contracts(
     return list(result.scalars().all())
 
 
+async def get_contracts_by_buyer(
+    db: AsyncSession,
+    buyer_id: UUID,
+) -> list[Contract]:
+    result = await db.execute(
+        select(Contract).where(Contract.buyer_id == buyer_id).order_by(Contract.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def update_contract(
     db: AsyncSession,
     contract: Contract,

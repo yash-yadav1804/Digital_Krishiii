@@ -29,6 +29,7 @@ class CropCreate(BaseModel):
         max_digits=10,
         decimal_places=2,
     )
+    image_url: str | None = Field(default=None, max_length=1000)
 
 
 class CropUpdate(BaseModel):
@@ -55,6 +56,7 @@ class CropUpdate(BaseModel):
         max_digits=10,
         decimal_places=2,
     )
+    image_url: str | None = Field(default=None, max_length=1000)
 
 
 class CropResponse(BaseModel):
@@ -74,3 +76,4 @@ class CropResponse(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+    image_url: str | None

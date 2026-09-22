@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user, require_role
+from app.api.dependencies import require_role
 
 from app.db.models.user import User
 from app.db.session import get_db
@@ -43,7 +43,7 @@ async def create_land(
     response_model=list[LandResponse],
 )
 async def get_my_lands(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     land_service: LandService = Depends(get_land_service),
 ):
     return await land_service.get_farmer_lands(
@@ -57,7 +57,7 @@ async def get_my_lands(
 )
 async def get_land(
     land_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     land_service: LandService = Depends(get_land_service),
 ):
     return await land_service.get_land(
@@ -73,7 +73,7 @@ async def get_land(
 async def update_land(
     land_id: UUID,
     data: LandUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     land_service: LandService = Depends(get_land_service),
 ):
     return await land_service.update_land(
@@ -89,7 +89,7 @@ async def update_land(
 )
 async def delete_land(
     land_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     land_service: LandService = Depends(get_land_service),
 ):
     await land_service.delete_land(

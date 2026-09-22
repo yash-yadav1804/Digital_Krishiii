@@ -11,6 +11,7 @@ class FarmerProfileCreate(BaseModel):
     district: str | None = None
     state: str | None = None
     land_details: str | None = None
+    image_url: str | None = None
 
 
 class FarmerProfileUpdate(BaseModel):
@@ -20,6 +21,7 @@ class FarmerProfileUpdate(BaseModel):
     district: str | None = None
     state: str | None = None
     land_details: str | None = None
+    image_url: str | None = None
 
 
 class FarmerProfileResponse(BaseModel):
@@ -31,5 +33,6 @@ class FarmerProfileResponse(BaseModel):
     district: str | None
     state: str | None
     land_details: str | None
+    image_url: str | None
 
     model_config = ConfigDict(from_attributes=True)

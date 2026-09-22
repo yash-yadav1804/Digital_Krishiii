@@ -27,10 +27,12 @@ class ContractBidCreate(BaseModel):
     )
 
     message: str | None = None
+    image_url: str | None = Field(default=None, max_length=1000)
 
 
 class ContractBidUpdate(BaseModel):
     status: ContractBidStatus
+    image_url: str | None
 
 
 class ContractBidResponse(BaseModel):
@@ -43,3 +45,4 @@ class ContractBidResponse(BaseModel):
     offered_price_per_unit: Decimal
     message: str | None
     status: ContractBidStatus
+    image_url: str | None

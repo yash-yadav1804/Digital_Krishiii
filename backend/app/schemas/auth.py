@@ -24,3 +24,17 @@ class UserResponse(BaseModel):
 
     id: UUID
     email: EmailStr
+    is_active: bool = True
+    roles: list[str] = []
+
+    @classmethod
+    def model_validate(cls, obj, *args, **kwargs):
+        if hasattr(obj, "roles"):
+            data = {
+                "id": obj.id,
+                "email": obj.email,
+                "is_active": obj.is_active,
+                "roles": [r.name for r in obj.roles] if obj.roles else [],
+            }
+            return cls(**data)
+        return super().model_validate(obj, *args, **kwargs)

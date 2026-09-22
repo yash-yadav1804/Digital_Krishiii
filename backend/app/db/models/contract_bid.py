@@ -42,6 +42,11 @@ class ContractBid(Base):
         nullable=True,
     )
 
+    image_url: Mapped[str | None] = mapped_column(
+        String(1000),
+        nullable=True,
+    )
+
     status: Mapped[str] = mapped_column(
         String(30),
         nullable=False,

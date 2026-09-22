@@ -14,6 +14,7 @@ from app.schemas.contract import (
 from app.services.contract_service import (
     create_contract,
     delete_contract,
+    get_buyer_contracts,
     get_contract,
     get_farmer_contracts,
     get_open_contracts,
@@ -55,6 +56,17 @@ async def list_my_contracts_route(
         db=db,
         farmer_id=current_user.id,
     )
+
+
+@router.get(
+    "/assigned",
+    response_model=list[ContractResponse],
+)
+async def list_assigned_contracts_route(
+    current_user: User = Depends(require_role("buyer")),
+    db: AsyncSession = Depends(get_db),
+):
+    return await get_buyer_contracts(db=db, buyer_id=current_user.id)
 
 
 @router.get(

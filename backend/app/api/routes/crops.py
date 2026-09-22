@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user, require_role
+from app.api.dependencies import require_role
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.crop import CropCreate, CropResponse, CropUpdate
@@ -28,7 +28,7 @@ router = APIRouter(
 )
 async def create_crop_route(
     data: CropCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await create_crop(
@@ -98,7 +98,7 @@ async def get_crop_route(
 async def update_crop_route(
     crop_id: UUID,
     data: CropUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     return await update_crop(
@@ -115,7 +115,7 @@ async def update_crop_route(
 )
 async def delete_crop_route(
     crop_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("farmer")),
     db: AsyncSession = Depends(get_db),
 ):
     await delete_crop(

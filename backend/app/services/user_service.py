@@ -69,9 +69,14 @@ class UserService:
         )
 
         await self.session.commit()
-        await self.session.refresh(user)
 
-        return user
+        # Return a role-loaded user so FastAPI does not trigger an async lazy load
+        # while serializing the registration response.
+        registered_user = await self.user_repository.get_by_id(user.id)
+        if registered_user is None:
+            raise RuntimeError("Registered user could not be loaded")
+
+        return registered_user
 
     async def authenticate_user(
         self,

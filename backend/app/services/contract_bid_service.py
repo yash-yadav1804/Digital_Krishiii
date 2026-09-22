@@ -11,6 +11,7 @@ from app.schemas.contract_bid import (
     ContractBidStatus,
     ContractBidUpdate,
 )
+from app.services.notification_service import create_notification
 
 
 async def create_bid(
@@ -53,7 +54,17 @@ async def create_bid(
         offered_quantity=data.offered_quantity,
         offered_price_per_unit=data.offered_price_per_unit,
         message=data.message,
+        image_url=data.image_url,
         status="PENDING",
+    )
+
+    create_notification(
+        db,
+        user_id=contract.farmer_id,
+        title="New contract bid",
+        message=f"A buyer placed a bid on '{contract.title}'.",
+        notification_type="CONTRACT_BID",
+        related_id=contract.id,
     )
 
     return await contract_bid_repository.create_bid(
@@ -151,6 +162,37 @@ async def update_bid(
     if data.status == ContractBidStatus.ACCEPTED:
         contract.buyer_id = bid.buyer_id
         contract.status = "ACCEPTED"
+        rejected_bids = await contract_bid_repository.reject_pending_bids_except(
+            db,
+            contract_id=contract.id,
+            accepted_bid_id=bid.id,
+        )
+        create_notification(
+            db,
+            user_id=bid.buyer_id,
+            title="Contract bid accepted",
+            message=f"Your bid for '{contract.title}' was accepted.",
+            notification_type="CONTRACT_BID_ACCEPTED",
+            related_id=contract.id,
+        )
+        for rejected_bid in rejected_bids:
+            create_notification(
+                db,
+                user_id=rejected_bid.buyer_id,
+                title="Contract bid closed",
+                message=f"Another bid was accepted for '{contract.title}'.",
+                notification_type="CONTRACT_BID_REJECTED",
+                related_id=contract.id,
+            )
+    else:
+        create_notification(
+            db,
+            user_id=bid.buyer_id,
+            title="Contract bid rejected",
+            message=f"Your bid for '{contract.title}' was rejected.",
+            notification_type="CONTRACT_BID_REJECTED",
+            related_id=contract.id,
+        )
 
     return await contract_bid_repository.update_bid(
         db=db,

@@ -25,11 +25,13 @@ async def get_bid_by_id(
 
 
 async def get_bids_by_buyer(
-    self,
-    buyer_id: int,
+    db: AsyncSession,
+    buyer_id: UUID,
 ) -> list[ContractBid]:
-    result = await self.db.execute(
-        select(ContractBid).where(ContractBid.buyer_id == buyer_id).order_by(ContractBid.id.desc())
+    result = await db.execute(
+        select(ContractBid)
+        .where(ContractBid.buyer_id == buyer_id)
+        .order_by(ContractBid.id.desc())
     )
     return list(result.scalars().all())
 
@@ -38,9 +40,29 @@ async def get_bids_by_contract(
     db: AsyncSession,
     contract_id: UUID,
 ) -> list[ContractBid]:
-    result = await db.execute(select(ContractBid).where(ContractBid.contract_id == contract_id))
-
+    result = await db.execute(
+        select(ContractBid).where(ContractBid.contract_id == contract_id)
+    )
     return list(result.scalars().all())
+
+
+async def reject_pending_bids_except(
+    db: AsyncSession,
+    *,
+    contract_id: UUID,
+    accepted_bid_id: UUID,
+) -> list[ContractBid]:
+    result = await db.execute(
+        select(ContractBid).where(
+            ContractBid.contract_id == contract_id,
+            ContractBid.id != accepted_bid_id,
+            ContractBid.status == "PENDING",
+        )
+    )
+    rejected_bids = list(result.scalars().all())
+    for bid in rejected_bids:
+        bid.status = "REJECTED"
+    return rejected_bids
 
 
 async def update_bid(

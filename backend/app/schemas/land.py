@@ -13,6 +13,7 @@ class LandCreate(BaseModel):
     area_acres: Decimal = Field(..., gt=0, max_digits=10, decimal_places=2)
     soil_type: str | None = Field(default=None, max_length=100)
     irrigation_type: str | None = Field(default=None, max_length=100)
+    image_url: str | None = Field(default=None, max_length=1000)
 
 
 class LandUpdate(BaseModel):
@@ -28,6 +29,7 @@ class LandUpdate(BaseModel):
     )
     soil_type: str | None = Field(default=None, max_length=100)
     irrigation_type: str | None = Field(default=None, max_length=100)
+    image_url: str | None = Field(default=None, max_length=1000)
 
 
 class LandResponse(BaseModel):
@@ -44,3 +46,4 @@ class LandResponse(BaseModel):
     irrigation_type: str | None
     created_at: datetime
     updated_at: datetime
+    image_url: str | None

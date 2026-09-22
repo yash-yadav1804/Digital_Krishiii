@@ -84,6 +84,13 @@ async def get_open_contracts(
     return await contract_repository.get_open_contracts(db=db)
 
 
+async def get_buyer_contracts(
+    db: AsyncSession,
+    buyer_id: UUID,
+) -> list[Contract]:
+    return await contract_repository.get_contracts_by_buyer(db=db, buyer_id=buyer_id)
+
+
 async def get_contract(
     db: AsyncSession,
     contract_id: UUID,
@@ -119,9 +126,29 @@ async def update_contract(
             detail="You cannot update this contract",
         )
 
-    for field, value in data.model_dump(
-        exclude_unset=True,
-    ).items():
+    changes = data.model_dump(exclude_unset=True)
+    if "status" in changes and hasattr(changes["status"], "value"):
+        changes["status"] = changes["status"].value
+
+    allowed_transitions = {
+        "OPEN": {"OPEN", "CANCELLED", "ACCEPTED", "NEGOTIATING"},
+        "ACCEPTED": {"ACCEPTED", "NEGOTIATING", "COMPLETED", "CANCELLED"},
+        "NEGOTIATING": {"NEGOTIATING", "ACCEPTED", "COMPLETED", "CANCELLED"},
+        "ACTIVE": {"ACTIVE", "COMPLETED", "CANCELLED"},
+        "PENDING": {"PENDING", "OPEN", "CANCELLED"},
+        "COMPLETED": {"COMPLETED"},
+        "CANCELLED": {"CANCELLED"},
+        "REJECTED": {"REJECTED"},
+    }
+    if "status" in changes:
+        next_status = changes["status"]
+        if next_status not in allowed_transitions.get(contract.status, {contract.status}):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid contract status transition: {contract.status} -> {next_status}",
+            )
+
+    for field, value in changes.items():
         setattr(contract, field, value)
 
     if contract.end_date < contract.start_date:
