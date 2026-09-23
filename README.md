@@ -806,7 +806,7 @@ Production secrets should be managed using a secure secret-management solution i
 
 # 👨‍💻 Developer
 
-## Raj Mahajan
+## Yash Yadav
 
 **B.Tech Computer Science & Engineering**
 
