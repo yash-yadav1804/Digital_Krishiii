@@ -70,6 +70,7 @@ app.add_middleware(
         "http://localhost:80",
         "http://localhost:5173",
         "http://localhost:3000",
+        "https://main.d35kaajrrt35e3.amplifyapp.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
